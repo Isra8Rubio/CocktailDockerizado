@@ -1,0 +1,202 @@
+﻿@using API.APIService
+@using Microsoft.Extensions.Localization
+@using MudBlazor
+
+@inject APIClient Api
+@inject IStringLocalizer<App> L
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-4">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6" Align="Align.Center">
+            @L["Chart_Category_Title"]
+        </MudText>
+
+        @if (loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (series is null || labels is null || series.Length == 0)
+        {
+            <MudText Color="Color.Secondary">@L["Chart_Empty"]</MudText>
+        }
+        else
+        {
+            <MudChart ChartType="ChartType.Pie"
+                      InputLabels="labels"
+                      InputData="series"
+                      @bind-SelectedIndex="selectedIndex"
+                      Width="100%"
+                      Height="300px" />
+
+            <MudText Typo="Typo.subtitle2" Class="chart-hint">
+                @if (selectedIndex >= 0 && labels is not null && series is not null)
+                {
+                    var count = series[selectedIndex];
+                    var total = series.Sum();
+                    var pct = total > 0 ? Math.Round(count / total * 100, 1) : 0;
+                    @($"{labels[selectedIndex]}: {count:N0} ({pct}%)")
+                }
+                else
+                {
+                    @L["Chart_ClickToSelect"]
+                }
+            </MudText>
+        }
+    </MudStack>
+</MudPaper>
+
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public int MaxSlices { get; set; } = 10;
+    [Parameter] public int? TopN { get; set; }
+    [Parameter]
+    public string[] RequiredCategories { get; set; } =
+        new[] { "Cocoa", "Homemade liqueur", "Beer", "Soft Drink" };
+
+    private bool loading = true;
+    private string[]? labels;
+    private double[]? series;
+    private int selectedIndex = -1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Title ??= L["Chart_Category_Title"].Value;
+        if (TopN.HasValue) MaxSlices = TopN.Value;
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        selectedIndex = -1;
+
+        try
+        {
+            // 1) Listado de categorías
+            var categories = await Api.Cocktails_GetCategoriesAsync();
+
+            var names = categories?
+                .Select(c => c.StrCategory)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new();
+
+            if (names.Count == 0)
+            {
+                labels = Array.Empty<string>();
+                series = Array.Empty<double>();
+                return;
+            }
+
+            // 2) Conteo por categoría (paralelo)
+            var results = await Task.WhenAll(names.Select(cat => Api.Cocktails_GetByCategoryAsync(cat)));
+
+            var pairs = names.Zip(results, (name, list) =>
+                new { Name = name, Count = (double)(list?.Count ?? 0) })
+                .OrderByDescending(x => x.Count)
+                .ToList();
+
+            // 3) Selección: Required + Top hasta MaxSlices y “Otros”
+            var requiredSet = new HashSet<string>(RequiredCategories.Select(Norm), StringComparer.OrdinalIgnoreCase);
+
+            var required = pairs.Where(p => requiredSet.Contains(Norm(p.Name))).ToList();
+            var remaining = pairs.Where(p => !requiredSet.Contains(Norm(p.Name)))
+                                 .OrderByDescending(p => p.Count)
+                                 .ToList();
+
+            var capacityForRest = Math.Max(0, MaxSlices - required.Count);
+            var pickedRest = remaining.Take(capacityForRest).ToList();
+            var selected = required.Concat(pickedRest)
+                                   .GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                                   .Select(g => g.First())
+                                   .ToList();
+
+            var othersCount = remaining.Skip(pickedRest.Count).Sum(p => p.Count);
+
+            // 4) Etiquetas localizadas
+            var labelList = selected.Select(p => LocalizeCategory(p.Name)).ToList();
+            var dataList = selected.Select(p => p.Count).ToList();
+
+            if (othersCount > 0)
+            {
+                labelList.Add(L["Category_Others"].Value);
+                dataList.Add(othersCount);
+            }
+
+            labels = labelList.ToArray();
+            series = dataList.ToArray();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Error loading categories chart: {ex.Message}", Severity.Error);
+            labels = Array.Empty<string>();
+            series = Array.Empty<double>();
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string Norm(string s) =>
+        (s ?? "").Trim().ToLowerInvariant().Replace("  ", " ");
+
+    private string LocalizeCategory(string apiName)
+    {
+        switch (Norm(apiName))
+        {
+            case "cocktail": return L["Category_Cocktail"].Value;
+            case "ordinary drink": return L["Category_OrdinaryDrink"].Value;
+            case "shot": return L["Category_Shot"].Value;
+            case "punch / party drink": return L["Category_PunchPartyDrink"].Value;
+            case "other / unknown": return L["Category_OtherUnknown"].Value;
+            case "coffee / tea": return L["Category_CoffeeTea"].Value;
+            case "milk / float / shake": return L["Category_MilkFloatShake"].Value;
+            case "shake": return L["Category_MilkFloatShake"].Value;
+            case "homemade liqueur": return L["Category_HomemadeLiqueur"].Value;
+            case "beer": return L["Category_Beer"].Value;
+            case "cocoa": return L["Category_Cocoa"].Value;
+            case "soft drink": return L["Category_SoftDrink"].Value;
+            default: return apiName;
+        }
+    }
+}
+
+@*
+ Qué hacemos:
+  - Mostramos un gráfico **pie** con la distribución de cócteles por categoría.
+  - Limitamos el número de porciones visibles y agrupamos el resto en “Otros”.
+  - Forzamos que ciertas categorías aparezcan siempre (RequiredCategories).
+
+ Parámetros:
+  - Title?: título opcional (por defecto: L["Chart_Category_Title"]).
+  - MaxSlices: nº máx. de porciones visibles (por defecto 10). Si TopN tiene valor, lo usamos como MaxSlices.
+  - TopN?: alias para limitar porciones (sobrescribe MaxSlices).
+  - RequiredCategories: categorías que incluimos sí o sí antes de completar con el Top restante.
+
+ Flujo de datos:
+  - Obtenemos categorías (Cocktails_GetCategoriesAsync) y sus conteos en paralelo
+    (Cocktails_GetByCategoryAsync por cada nombre).
+  - Ordenamos por recuento y:
+      1) Seleccionamos todas las Required.
+      2) Rellenamos hasta MaxSlices con las más frecuentes restantes.
+      3) Sumamos el resto en “Otros” si queda algo.
+  - Localizamos etiquetas con LocalizeCategory y normalizamos con Norm.
+
+ UI e interacción:
+  - <MudChart ChartType="Pie" Height="300px"> con @bind-SelectedIndex para mostrar debajo
+    “Etiqueta: Recuento (Porcentaje)”. Mostramos hint si no hay selección.
+  - Estados: barra indeterminada mientras carga y mensaje “Chart_Empty” si no hay datos.
+
+ Estado y errores:
+  - Campos: loading, labels[], series[], selectedIndex.
+  - Ante errores de la API, mostramos Snackbar y dejamos el gráfico vacío de forma segura.
+
+ Notas:
+  - Title se resuelve en OnParametersSetAsync; también aplicamos TopN->MaxSlices ahí.
+  - Norm() homogeneiza las cadenas; LocalizeCategory mapea a claves .resx conocidas.
+*@

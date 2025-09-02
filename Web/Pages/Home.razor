@@ -1,0 +1,138 @@
+﻿@page "/"
+
+@using BlazorCocktails.Client.Shared.Charts
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<App> L
+@inject NavigationManager Nav
+
+<PageTitle>@L["Home_Title"]</PageTitle>
+
+<!-- =========================
+     HERO
+     ========================= -->
+<div class="home-hero">
+    <div class="home-hero__bg"></div>
+    <div class="home-hero__content">
+        <MudText Typo="Typo.h3">@L["Home_HeroTitle"]</MudText>
+        <MudText Typo="Typo.subtitle1" Class="opacity-80 mt-2">
+            @L["Home_HeroSubtitle"]
+        </MudText>
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Filled"
+                       Class="auth-btn"
+                       OnClick="@(() => Nav.NavigateTo("/categories"))">
+                @L["Home_HeroPrimary"]
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Class="auth-btn-outline"
+                       OnClick="@(() => Nav.NavigateTo("/alcohol"))">
+                @L["Home_HeroSecondary"]
+            </MudButton>
+        </MudStack>
+    </div>
+</div>
+
+
+<!-- =========================
+     STATS (charts + texto central)
+     ========================= -->
+
+<MudGrid Spacing="3" Class="home-section stats-split" AlignItems="Stretch" Justify="Justify.Center">
+    <!-- IZQ: AlcoholTypes -->
+    <MudItem xs="12" md="4">
+        <MudPaper Class="home-card tinted pa-6 h-100">
+            <div class="chart-frame">
+                <AlcoholTypesChart />
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <!-- CENTRO: copy -->
+    <MudItem xs="12" md="4">
+        <div class="stats-center hero">
+            <MudText Typo="Typo.h4" Class="stats-title mb-2">
+                @L["Home_StatsHeading"]
+            </MudText>
+            <MudText Class="stats-subtitle opacity-80 mb-4">
+                @L["Home_StatsCopy"]
+            </MudText>
+        </div>
+    </MudItem>
+
+    <!-- DCHA: CategoryDistribution -->
+    <MudItem xs="12" md="4">
+        <MudPaper Class="home-card tinted pa-6 h-100">
+            <div class="chart-frame">
+                <CategoryDistributionChart MaxSlices="11" />
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- =========================
+     CARRUSEL
+     ========================= -->
+<MudGrid Spacing="3" Class="home-section carousel-split" AlignItems="Stretch">
+    <!-- IZQ: Carrusel -->
+    <MudItem xs="12" md="6">
+        <div class="hc-frame">
+            <MudCarousel Class="hc-fill"
+                         ShowArrows="@arrows"
+                         ShowBullets="@bullets"
+                         EnableSwipeGesture="@enableSwipeGesture"
+                         AutoCycle="@autocycle"
+                         AutoCycleInterval="6000"
+                         TData="object"
+                         Transition="@transition">
+
+                @foreach (var img in CarouselImages)
+                {
+                    <MudCarouselItem>
+                        <img src="@img" alt="Featured cocktail" class="hc-img" />
+                    </MudCarouselItem>
+                }
+            </MudCarousel>
+        </div>
+    </MudItem>
+
+    <!-- DCHA: Texto -->
+    <MudItem xs="12" md="6" Class="carousel-copy">
+        <div class="copy-block">
+            <MudText Typo="Typo.h3" Class="copy-title">
+                @L["Home_CarouselCopy_Title"]
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Class="copy-sub">
+                @L["Home_CarouselCopy_Body"]
+            </MudText>
+        </div>
+    </MudItem>
+</MudGrid>
+
+<!-- RANDOM plano centrado -->
+<MudGrid Class="home-section" Justify="Justify.Center">
+    <MudItem xs="12" md="5" Class="center-col">
+        <RandomCocktailWidget Compact="true" Flat="true" ShowName="true" NameRightOfIcon="true" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    // Imágenes del carrusel
+    private static readonly string[] CarouselImages =
+    {
+        "images/Carrusel1.jpg",
+        "images/Carrusel2.jpg",
+        "images/Carrusel3.jpg",
+        "images/Carrusel5.jpg"
+    };
+
+    // Ajustes UI carrusel
+    private bool arrows = false;
+    private bool bullets = true;
+    private bool enableSwipeGesture = true;
+    private bool autocycle = true;
+    private int autoCycleInterval = 6000;
+    private Transition transition = Transition.Fade;
+}
+

@@ -1,0 +1,12 @@
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<App> L
+
+<MudPaper Class="app-footer" Elevation="0" Square="true">
+    <MudContainer MaxWidth="MaxWidth.Large" Class="footer-inner">
+        <MudSpacer />
+
+        <MudLink Href="https://policies.google.com/privacy?hl=es" Class="footer-link">@L["Footer_Privacy"]</MudLink>
+        <MudText Typo="Typo.caption">·</MudText>
+        <MudLink Href="https://policies.google.com/terms?hl=es" Class="footer-link">@L["Footer_Terms"]</MudLink>
+    </MudContainer>
+</MudPaper>

@@ -1,0 +1,114 @@
+﻿@using API.APIService
+@using Microsoft.Extensions.Localization
+
+@implements IAsyncDisposable
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<App> L
+
+@if (Compact && Flat)
+{
+    <div class="random-compact">
+        <MudText Typo="Typo.overline" Class="rw-title">@L["Random_Title", "🍹"]</MudText>
+
+        @if (loading)
+        {
+            <MudSkeleton Height="28" Width="60%" Class="mt-2" />
+        }
+        else if (row is null)
+        {
+            <MudText Color="Color.Secondary">@L["Random_NoData"]</MudText>
+        }
+        else
+        {
+            <div class="rw-inline">
+                <MudIconButton Class="rw-refresh"
+                               Icon="@Icons.Material.Filled.Refresh"
+                               Disabled="@(refreshing || loading)"
+                               AriaLabel="@L["Random_Refresh"]"
+                               OnClick="RefreshAsync" />
+
+                @if (ShowName)
+                {
+                    <MudLink Href="@($"/cocktail/{row.DrinkId}")"
+                             Class="rf-chip-link"
+                             AriaLabel="@row.Name">
+                        <MudChip T="string" Class="rf-chip" Variant="Variant.Outlined" Size="Size.Small">
+                            @row.Name
+                        </MudChip>
+                    </MudLink>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public bool NameRightOfIcon { get; set; } = true;
+    [Parameter] public bool Flat { get; set; } = true;
+    [Parameter] public bool ShowName { get; set; } = true;
+    [Parameter] public bool Compact { get; set; } = true;
+
+    private RandomCocktailDTO? row;
+    private bool loading = true;
+    private bool refreshing;
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        try { row = await Api.Cocktails_GetRandomRowAsync(); }
+        catch (ApiException ex) { Snackbar.Add($"Error cargando: {ex.Message}", Severity.Error); }
+        finally { loading = false; }
+
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(12));
+        _ = RunAutoRefreshLoopAsync(_cts.Token);
+    }
+
+    private async Task RunAutoRefreshLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(ct))
+            {
+                try
+                {
+                    var latest = await Api.Cocktails_GetRandomRowAsync();
+                    if (latest?.DrinkId != row?.DrinkId)
+                    {
+                        row = latest;
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+                catch (ApiException ex) { Snackbar.Add($"Auto-refresh: {ex.Message}", Severity.Warning); }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task RefreshAsync()
+    {
+        refreshing = true;
+        try
+        {
+            row = await Api.Cocktails_RefreshRandomNowAsync();
+            Snackbar.Add("¡Actualizado!", Severity.Success);
+        }
+        catch (ApiException ex) { Snackbar.Add($"Error refrescando: {ex.Message}", Severity.Error); }
+        finally
+        {
+            refreshing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _cts?.Cancel();
+        _timer?.Dispose();
+        _cts?.Dispose();
+        await Task.CompletedTask;
+    }
+}

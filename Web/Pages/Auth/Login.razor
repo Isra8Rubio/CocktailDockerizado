@@ -1,0 +1,134 @@
+﻿@page "/login"
+@attribute [AllowAnonymous]
+
+@using API.APIService
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Forms
+@using Blazored.FluentValidation
+@using BlazorCocktails.Client.Shared.Helper
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IStringLocalizer<App> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Login_Title"]</PageTitle>
+
+<MudPaper Class="auth-page auth-page--paper" Elevation="0" Square="true">
+    <MudCard Class="auth-card">
+        <MudCardHeader Class="bg-gradient-auth">
+            <MudText Typo="Typo.h5">@L["Login_Title"]</MudText>
+        </MudCardHeader>
+
+        <MudCardContent Class="p-6">
+
+            <EditForm Model="_model"
+                      OnValidSubmit="LoginAsync"
+                      OnInvalidSubmit="InvalidSubmit">
+                <FluentValidationValidator DisableAssemblyScanning="true" />
+
+                <MudTextField T="string"
+                              Variant="Variant.Filled"
+                              Placeholder="@L["Login_EmailPlaceholder"]"
+                              @bind-Value="_model.Email"
+                              For="@(() => _model.Email)"
+                              InputType="InputType.Email"
+                              Immediate="true"
+                              Disabled="@_busy"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Email" />
+
+                <MudTextField class="mt-4"
+                              T="string"
+                              Variant="Variant.Filled"
+                              Label="@L["Login_PasswordLabel"]"
+                              @bind-Value="_model.Password"
+                              For="@(() => _model.Password)"
+                              InputType="@(_showPass ? InputType.Text : InputType.Password)"
+                              Immediate="true"
+                              Disabled="@_busy"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showPass ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showPass = !_showPass)" />
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+                    <MudCheckBox T="bool" @bind-Checked="_remember" Dense="true" Disabled="@_busy" Label="@L["Login_Remember"]" />
+                    <MudSpacer />
+                    <MudLink Href="/forgot-password" Class="text-sm opacity-80">@L["Login_Forgot"]</MudLink>
+                </MudStack>
+
+                <MudStack Row="true" Spacing="2" Class="mt-5">
+                    <MudButton Class="auth-btn"
+                               Variant="Variant.Filled"
+                               ButtonType="ButtonType.Submit"
+                               Disabled="@_busy">
+                        @(_busy? L["Login_Working"] : L["Login_Submit"])
+                    </MudButton>
+
+                    <MudButton Class="auth-btn-outline"
+                               Variant="Variant.Outlined"
+                               Href="/register"
+                               Disabled="@_busy">
+                        @L["Login_CreateAccount"]
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+
+        </MudCardContent>
+    </MudCard>
+</MudPaper>
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
+
+    private bool _busy, _remember, _showPass;
+    private CredentialsUserDTO _model = new();
+
+    private void InvalidSubmit(EditContext ctx)
+    {
+        // Primer mensaje de validación como feedback rápido
+        var first = ctx.GetValidationMessages().FirstOrDefault() ?? L["Login_Failed"];
+        Snackbar.Add(first, Severity.Warning);
+    }
+
+    private async Task LoginAsync()
+    {
+        _busy = true;
+        try
+        {
+            var res = await Api.Users_LoginAsync(_model);
+            var jwt = res.Token;
+
+            // Deja el token en el cliente NSwag
+            API.APIService.APIClient.Token = jwt;
+
+            // Guarda en el almacenamiento elegido y limpia el otro
+            if (_remember)
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", "authToken", jwt);
+                await JS.InvokeVoidAsync("sessionStorage.removeItem", "authToken");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "authToken", jwt);
+                await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+            }
+
+            Snackbar.Add(L["Login_Success"], Severity.Success);
+
+            // Respeta returnUrl si viene
+            var dest = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl!;
+            Nav.NavigateTo(dest);
+        }
+        catch (Exception ex)
+        {
+            // Centralizado con tu helper
+            ApiErrorHelper.Handle(ex, Snackbar, L, Nav);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,153 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using MudBlazor
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using API.APIService
+@inject IStringLocalizer<App> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+
+<MudThemeProvider IsDarkMode="true" />
+<MudLayout Class="summer-dark">
+    <MudAppBar Elevation="2" Color="Color.Primary" Class="appbar-2rows">
+        @if (IsAuthenticated)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                           Color="Color.Inherit"
+                           Edge="Edge.Start"
+                           Title="@L["MainLayout_ToggleDrawer"]"
+                           AriaLabel="@L["MainLayout_ToggleDrawer"]"
+                           OnClick="ToggleDrawer" />
+        }
+
+        <MudText Typo="Typo.h6" Class="ml-2">@L["MainLayout_AppTitle"]</MudText>
+
+        <MudSpacer />
+
+        <div class="appbar-actions-col">
+            <div class="appbar-row top">
+                @if (IsAuthenticated)
+                {
+                    <AuthorizeView Policy="isAdmin">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Inherit"
+                                   Class="appbar-admin"
+                                   Size="Size.Small"
+                                   Href="/admin"
+                                   StartIcon="@Icons.Material.Filled.AdminPanelSettings">
+                            ADMIN
+                        </MudButton>
+
+                    </AuthorizeView>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Inherit"
+                               StartIcon="@Icons.Material.Filled.Logout"
+                               Size="Size.Small"
+                               Class="appbar-btn"
+                               OnClick="LogoutAsync">
+                        @L["MainLayout_Logout"]
+                    </MudButton>
+                }
+            </div>
+
+            <div class="appbar-row bottom">
+                <LanguageSwitcher />
+            </div>
+        </div>
+    </MudAppBar>
+
+    @if (IsAuthenticated)
+    {
+        <MudDrawer @bind-Open="_drawerOpen"
+                   Variant="DrawerVariant.Responsive"
+                   Elevation="1"
+                   Class="p-0 drawer-fix">
+
+            <div class="drawer-scroll">
+                <NavMenu />
+            </div>
+        </MudDrawer>
+    }
+    @if (IsAuthPage && !IsAuthenticated)
+    {
+        <div class="auth-shell">
+            <div class="auth-overlay"></div>
+            <div class="auth-content">
+                <div class="p-4">@Body</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <MudMainContent>
+            <div class="page-shell">
+                <div class="page-body">
+                    @Body
+                </div>
+                <Footer />
+            </div>
+        </MudMainContent>
+    }
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool IsAuthPage { get; set; }
+
+    private bool IsAuthenticated => !string.IsNullOrWhiteSpace(APIClient.Token);
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+    private void OnTokenChanged() => InvokeAsync(StateHasChanged);
+
+    protected override void OnInitialized()
+    {
+        APIClient.TokenChanged += OnTokenChanged;
+        Nav.LocationChanged += OnLocationChanged;
+        UpdateIsAuthPage();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && string.IsNullOrEmpty(APIClient.Token))
+        {
+            var token = await JS.InvokeAsync<string?>("localStorage.getItem", "authToken")
+                        ?? await JS.InvokeAsync<string?>("sessionStorage.getItem", "authToken");
+            APIClient.Token = token;
+        }
+    }
+
+    private void OnLocationChanged(object? s, LocationChangedEventArgs e)
+    {
+        UpdateIsAuthPage();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateIsAuthPage()
+    {
+        var path = Nav.ToBaseRelativePath(Nav.Uri).ToLowerInvariant();
+
+        IsAuthPage =
+            path.StartsWith("login") ||
+            path.StartsWith("register") ||
+            path.StartsWith("forgot-password") ||
+            path.StartsWith("reset-password");
+    }
+
+    private async Task LogoutAsync()
+    {
+        APIClient.Token = null;
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        await JS.InvokeVoidAsync("sessionStorage.removeItem", "authToken");
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        APIClient.TokenChanged -= OnTokenChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

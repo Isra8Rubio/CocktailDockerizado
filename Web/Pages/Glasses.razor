@@ -1,0 +1,157 @@
+﻿@page "/glasses"
+
+@using API.APIService
+@using BlazorCocktails.Client.Shared
+@using Microsoft.Extensions.Localization
+@using System.Linq
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IStringLocalizer<App> L
+
+<PageTitle>@L["Glasses_Title"]</PageTitle>
+
+<MudStack Spacing="2">
+    @* === Select de vasos === *@
+    @if (glasses is null)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    else
+    {
+        <MudSelect T="string"
+                   Label="@L["Glasses_Label"]"
+                   Dense="true"
+                   Clearable="true"
+                   Placeholder="@L["Glasses_Placeholder"]"
+                   Value="selectedGlass"
+                   ValueChanged="OnSelectedGlassChanged"
+                   Immediate="true"
+                   Disabled="@isLoading">
+            @foreach (var g in glasses)
+            {
+                <MudSelectItem Value="@g.StrGlass">@g.StrGlass</MudSelectItem>
+            }
+        </MudSelect>
+    }
+
+    @* === Resultados / estado === *@
+    @if (isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Class="mt-2" />
+    }
+    else if (drinks is null)
+    {
+        <MudText Class="mt-4" Color="Color.Secondary">
+            @L["Glasses_SelectHint"]
+        </MudText>
+    }
+    else
+    {
+        @if (drinks.Count > pageSize)
+        {
+            <Pager TotalItems="drinks.Count"
+                   PageSize="pageSize"
+                   Radius="2"
+                   @bind-CurrentPage="page" />
+        }
+
+        <MudGrid Class="mt-2">
+            @foreach (var d in PagedDrinks)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Class="mb-4 hover-elevate" Style="cursor:pointer"
+                             @onclick="@(() => Nav.NavigateTo($"/cocktail/{d.IdDrink}?from=glasses"))">
+                        <MudCardMedia Image="@d.StrDrinkThumb" Height="160" Alt="@d.StrDrink" />
+                        <MudCardContent>
+                            <MudText Typo="Typo.subtitle2">@d.StrDrink</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    // ---------- Estado ----------
+    private List<GlassDTO>? glasses;
+    private List<CocktailItemDTO>? drinks;
+
+    private string? selectedGlass;
+    private bool isLoading;
+    private long lastRequestId = 0;
+    private int page = 1;
+    private const int pageSize = 8;
+
+    // ---------- Paginación ----------
+    private IEnumerable<CocktailItemDTO> PagedDrinks =>
+        (drinks ?? Enumerable.Empty<CocktailItemDTO>())
+            .OrderBy(d => d.StrDrink)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+
+    // ---------- Lifecycle ----------
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Obtenemos la lista de vasos
+            glasses = (await Api.Cocktails_GetGlassesAsync())?
+                        .Where(x => !string.IsNullOrWhiteSpace(x.StrGlass))
+                        .OrderBy(x => x.StrGlass)
+                        .ToList();
+            drinks = null; // mostramos hint hasta que el usuario seleccione
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"{L["Glasses_Error_LoadGlasses"]}: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ---------- Handlers ----------
+    private async Task OnSelectedGlassChanged(string? glass)
+    {
+        selectedGlass = glass;
+        page = 1;
+        await LoadDrinksAsync(selectedGlass);
+    }
+
+    // ---------- Data fetch ----------
+    private async Task LoadDrinksAsync(string? glass)
+    {
+        var requestId = System.Threading.Interlocked.Increment(ref lastRequestId);
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(glass))
+            {
+                // Sin selección: mostramos el hint
+                if (requestId == lastRequestId) drinks = null;
+                return;
+            }
+
+            var result = (await Api.Cocktails_GetByGlassAsync(glass))?.ToList() ?? new();
+            if (requestId == lastRequestId) drinks = result;
+        }
+        catch (ApiException ex)
+        {
+            if (requestId == lastRequestId)
+            {
+                Snackbar.Add($"{L["Glasses_Error_LoadDrinks"]}: {ex.Message}", Severity.Error);
+                drinks = new();
+            }
+        }
+        finally
+        {
+            if (requestId == lastRequestId)
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+}

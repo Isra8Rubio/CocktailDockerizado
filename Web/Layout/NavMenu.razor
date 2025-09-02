@@ -1,0 +1,59 @@
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<App> L
+
+<MudNavMenu Dense="true" Class="py-2">
+
+    <MudText Typo="Typo.overline" Class="px-4 pt-1 pb-2 opacity-75">
+        @L["Nav_Section_General"]
+    </MudText>
+
+    <MudNavLink Href="/" Match="NavLinkMatch.All"
+                Icon="@Icons.Material.Filled.Home"
+                ActiveClass="mud-primary-text">
+        @L["Nav_Home"]
+    </MudNavLink>
+
+    <MudText Typo="Typo.overline" Class="px-4 pt-4 pb-2 opacity-75">
+        @L["Nav_Section_Cocktails"]
+    </MudText>
+
+    <MudNavLink Href="/alcohol" Icon="@Icons.Material.Filled.LocalBar"
+                ActiveClass="mud-primary-text">
+        @L["Nav_Alcohol"]
+    </MudNavLink>
+
+    <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category"
+                ActiveClass="mud-primary-text">
+        @L["Nav_Categories"]
+    </MudNavLink>
+
+    <MudNavLink Href="/glasses" Icon="@Icons.Material.Filled.WineBar"
+                ActiveClass="mud-primary-text">
+        @L["Nav_Glasses"]
+    </MudNavLink>
+</MudNavMenu>
+
+@*
+ Qué hacemos:
+  - Construimos el menú lateral de navegación con MudBlazor, organizado por secciones y con textos localizables.
+
+ Estructura:
+  - <MudNavMenu Dense> para un menú compacto.
+  - Encabezados de sección ("General", "Cocktails") con <MudText Typo="overline">.
+  - Enlaces:
+     • "/" (Home) con Match="All" para coincidencia exacta.
+     • "/alcohol", "/categories", "/glasses".
+    Cada enlace lleva icono y ActiveClass="mud-primary-text" para resaltar el activo.
+  - <MudDivider> y pie con la versión (L["Nav_Version", "0.1"]).
+
+ Localización:
+  - Inyectamos IStringLocalizer<App> (L) y sacamos todos los textos/etiquetas de los .resx.
+
+ UX/Accesibilidad:
+  - Los enlaces activos se marcan visualmente y exponen aria-current automáticamente vía MudNavLink.
+  - Modo denso para reducir padding y aprovechar mejor el alto del drawer.
+
+ Cómo extenderlo:
+  - Añadimos otro <MudNavLink Href="..."> con su icono y clave de recursos.
+  - Si más adelante hay autenticación, podemos mostrar/ocultar enlaces según el estado del usuario.
+*@

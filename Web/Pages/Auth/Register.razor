@@ -1,0 +1,114 @@
+﻿@page "/register"
+@attribute [AllowAnonymous]
+
+@using API.APIService
+@using Blazored.FluentValidation
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Forms
+@using BlazorCocktails.Client.Shared.Helper
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IStringLocalizer<App> L
+
+<PageTitle>@L["Register_Title"]</PageTitle>
+
+<MudPaper Class="auth-page--paper" Elevation="0" Square="true">
+    <div class="auth-card">
+        <div class="bg-gradient-auth">
+            <MudText Typo="Typo.h5">@L["Register_Title"]</MudText>
+        </div>
+
+        <div class="pa-6">
+            <EditForm Model="_model"
+                      OnValidSubmit="RegisterAsync"
+                      OnInvalidSubmit="InvalidSubmit">
+                <FluentValidationValidator DisableAssemblyScanning="true" />
+
+                <MudTextField T="string"
+                              Variant="Variant.Filled"
+                              Label="@L["Register_EmailLabel"]"
+                              Placeholder="@L["Register_EmailPlaceholder"]"
+                              @bind-Value="_model.Email"
+                              For="@(() => _model.Email)"
+                              Immediate="true"
+                              Disabled="@_busy"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Email" />
+
+                <MudTextField class="mt-4"
+                              T="string"
+                              Variant="Variant.Filled"
+                              Label="@L["Register_PasswordLabel"]"
+                              @bind-Value="_model.Password"
+                              For="@(() => _model.Password)"
+                              InputType="@(_show1 ? InputType.Text : InputType.Password)"
+                              Immediate="true"
+                              Disabled="@_busy"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_show1 ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _show1 = !_show1)" />
+
+                <MudTextField class="mt-4"
+                              T="string"
+                              Variant="Variant.Filled"
+                              Label="@L["Register_ConfirmLabel"]"
+                              @bind-Value="_model.ConfirmPassword"
+                              For="@(() => _model.ConfirmPassword)"
+                              InputType="@(_show2 ? InputType.Text : InputType.Password)"
+                              Immediate="true"
+                              Disabled="@_busy"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_show2 ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _show2 = !_show2)" />
+
+                <MudStack Row="true" Spacing="2" Class="mt-6">
+                    <MudButton Variant="Variant.Filled"
+                               Class="auth-btn"
+                               ButtonType="ButtonType.Submit"
+                               Disabled="@_busy">
+                        @(_busy? L["Register_Working"] : L["Register_Submit"])
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Class="auth-btn-outline"
+                               Href="/login"
+                               Disabled="@_busy">
+                        @L["Register_GoLogin"]
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    private bool _busy, _show1, _show2;
+    private RegisterUserDTO _model = new();
+
+    private void InvalidSubmit(EditContext ctx)
+    {
+        var first = ctx.GetValidationMessages().FirstOrDefault() ?? L["Err_Generic"];
+        Snackbar.Add(first, Severity.Warning);
+    }
+
+    private async Task RegisterAsync()
+    {
+        _busy = true;
+        try
+        {
+            await Api.Users_RegisterAsync(_model);
+            Snackbar.Add(L["Register_Success"], Severity.Success);
+            Nav.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            ApiErrorHelper.Handle(ex, Snackbar, L, Nav);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

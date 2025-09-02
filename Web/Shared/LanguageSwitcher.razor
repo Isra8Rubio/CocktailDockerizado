@@ -1,0 +1,39 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject Microsoft.Extensions.Localization.IStringLocalizer<App> L
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="lang-switcher">
+    <MudIconButton Size="Size.Small" Color="Color.Inherit"
+                   Title="@L["MainLayout_Lang_Spanish"]"
+                   AriaLabel="@L["MainLayout_Lang_Spanish"]"
+                   OnClick="@(() => Set("es-ES"))" Class="min-w-0">
+        <svg viewBox="0 0 3 2" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+            <rect width="3" height="2" fill="#c60b1e" />
+            <rect y="0.5" width="3" height="1" fill="#ffc400" />
+        </svg>
+    </MudIconButton>
+
+    <MudIconButton Size="Size.Small" Color="Color.Inherit"
+                   Title="@L["MainLayout_Lang_English"]"
+                   AriaLabel="@L["MainLayout_Lang_English"]"
+                   OnClick="@(() => Set("en-US"))" Class="min-w-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="20" height="20">
+            <rect width="60" height="30" fill="#012169" />
+            <path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="6" />
+            <path d="M0,0 60,30 M60,0 0,30" stroke="#C8102E" stroke-width="3" />
+            <rect x="24" width="12" height="30" fill="#fff" />
+            <rect y="9" width="60" height="12" fill="#fff" />
+            <rect x="26" width="8" height="30" fill="#C8102E" />
+            <rect y="11" width="60" height="8" fill="#C8102E" />
+        </svg>
+    </MudIconButton>
+</MudStack>
+
+@code {
+    private async Task Set(string culture)
+    {
+        await JS.InvokeVoidAsync("blazorCulture.set", culture);
+        Nav.NavigateTo(Nav.Uri, forceLoad: true);
+    }
+}

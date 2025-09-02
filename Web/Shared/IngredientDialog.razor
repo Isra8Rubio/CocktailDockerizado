@@ -1,0 +1,72 @@
+﻿@using API.APIService
+@using MudBlazor
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject Microsoft.Extensions.Localization.IStringLocalizer<App> L
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (ingredient is null)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+        @L["IngredientDialog_NotFound"]
+    </MudAlert>
+}
+else
+{
+    <MudStack Spacing="2">
+        <MudPaper Class="ing-header pa-3" Elevation="0">
+            <MudAvatar Class="ing-avatar" Size="Size.Medium"
+                       Icon="@Icons.Material.Filled.LocalBar" />
+            <div class="ing-title">
+                <MudText Typo="Typo.h6">@Name</MudText>
+
+                @if (!string.IsNullOrWhiteSpace(ingredient.Type))
+                {
+                    <MudChip T="string" Class="ing-chip" Variant="Variant.Outlined" Size="Size.Small">
+                        @ingredient.Type
+                    </MudChip>
+                }
+            </div>
+        </MudPaper>
+
+        @if (!string.IsNullOrWhiteSpace(ingredient.Description))
+        {
+            <MudPaper Class="ing-body pa-3" Elevation="0">
+                <MudText>@ingredient.Description</MudText>
+            </MudPaper>
+        }
+    </MudStack>
+}
+
+@code {
+    [Parameter] public string Name { get; set; } = default!;
+
+    private IngredientDetailDTO? ingredient;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            ingredient = await Api.Cocktails_GetIngredientByNameAsync(Name);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Error ({ex.StatusCode}): {ex.Message}", Severity.Error);
+            ingredient = null;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error cargando ingrediente: {ex.Message}", Severity.Error);
+            ingredient = null;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

@@ -1,0 +1,264 @@
+﻿@page "/admin"
+@attribute [Authorize(Policy = "isAdmin")]
+@layout MainLayout
+
+@using API.APIService
+@using BlazorCocktails.Client.Shared.Helper
+@using Microsoft.Extensions.Localization
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject IStringLocalizer<App> L
+@inject NavigationManager Nav
+@inject IDialogService Dialog
+
+<MudGrid Class="home-section" GutterSize="GutterSize.Small">
+
+    <!-- === Tile: total usuarios === -->
+    <MudItem xs="12" md="6" lg="4">
+        <MudPaper Class="home-card tinted pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h5">@L["Admin_UsersTitle"]</MudText>
+
+                <MudStack Row="true" Spacing="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                   Title=@L["Admin_DownloadCsv"]
+                                   OnClick="DownloadCsvAsync" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Title=@L["Admin_Refresh"]
+                                   Disabled="@_busyCount"
+                                   OnClick="LoadCountAsync" />
+                </MudStack>
+            </MudStack>
+
+            @if (_busyCount)
+            {
+                <MudSkeleton Height="110" Class="mt-3" />
+            }
+            else
+            {
+                <MudText Typo="Typo.h1" Class="mt-3">@_users</MudText>
+                <MudText Class="opacity-80">@L["Admin_TotalRegistered"]</MudText>
+                <MudText Class="opacity-60 text-sm mt-2">
+                    @($"{L["Admin_LastUpdate"]} {_lastRefreshLocal}")
+                </MudText>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <!-- === Tile: conceder rol Admin === -->
+    <MudItem xs="12" md="6" lg="4">
+        <MudPaper Class="home-card tinted pa-6">
+            <MudText Typo="Typo.h5" Class="mb-2">@L["Admin_GrantAdminTitle"]</MudText>
+
+            <MudForm @ref="_formAdmin">
+                <MudTextField T="string"
+                              Variant="Variant.Filled"
+                              Label=@L["Admin_UserEmailLabel"]
+                              Placeholder="user@example.com"
+                              @bind-Value="_emailAdmin"
+                              Required="true"
+                              Validation="@(new Func<string?, string?>(EmailValidator))"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Email"
+                              Disabled="@_busyAdmin" />
+
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton Variant="Variant.Filled"
+                               Class="auth-btn"
+                               Disabled="@_busyAdmin"
+                               OnClick="SubmitAdminAsync">
+                        @(_busyAdmin? L["Admin_Processing"] : L["Admin_MakeAdmin"])
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Class="auth-btn-outline"
+                               Disabled="@_busyAdmin"
+                               OnClick="@(()=> _emailAdmin = string.Empty)">
+                        @L["Common_Clear"]
+                    </MudButton>
+                </MudStack>
+            </MudForm>
+
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 opacity-80">
+                @L["Admin_GrantAdminHelp"]
+            </MudAlert>
+        </MudPaper>
+    </MudItem>
+
+    <!-- === Tile: eliminar usuario por UserName/Email === -->
+    <MudItem xs="12" md="6" lg="4">
+        <MudPaper Class="home-card tinted pa-6">
+            <MudText Typo="Typo.h5" Class="mb-2">@L["Admin_DeleteTitle"]</MudText>
+
+            <MudForm @ref="_formDelete">
+                <MudTextField T="string"
+                              Variant="Variant.Filled"
+                              Label=@L["Admin_UserOrEmailLabel"]
+                              Placeholder="username o email"
+                              @bind-Value="_userInput"
+                              Required="true"
+                              Immediate="true"
+                              Disabled="@_busyDelete"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Badge" />
+
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               Disabled="@_busyDelete"
+                               Type="Button"
+                               OnClick="SubmitDeleteAsync">
+                        @(_busyDelete? L["Admin_Processing"] : L["Common_Delete"])
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Class="auth-btn-outline"
+                               Disabled="@_busyDelete"
+                               OnClick="@(()=> _userInput = string.Empty)">
+                        @L["Common_Clear"]
+                    </MudButton>
+                </MudStack>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+@code {
+    // ---------- Estado ----------
+    private bool _busyCount, _busyAdmin, _busyDelete;
+    private int _users;
+    private string _lastRefreshLocal = "-";
+
+    // ---------- Formularios / inputs ----------
+    private MudForm? _formAdmin;
+    private string _emailAdmin = "";
+
+    private MudForm? _formDelete;
+    private string _userInput = "";
+
+    // ---------- Lifecycle ----------
+    protected override async Task OnInitializedAsync()
+        => await LoadCountAsync();
+
+    // ---------- Acciones: conteo usuarios ----------
+    private async Task LoadCountAsync()
+    {
+        _busyCount = true;
+        try
+        {
+            _users = await Api.Users_CountAsync();
+            _lastRefreshLocal = DateTime.Now.ToString("g");
+        }
+        catch (Exception ex)
+        {
+            ApiErrorHelper.Handle(ex, Snackbar, L, Nav, apiSeverity: Severity.Error);
+        }
+        finally
+        {
+            _busyCount = false;
+        }
+    }
+
+    // ---------- Acciones: hacer Admin ----------
+    private async Task SubmitAdminAsync()
+    {
+        await _formAdmin!.Validate();
+        if (!_formAdmin.IsValid)
+        {
+            Snackbar.Add(L["Admin_EmailCheck"], Severity.Info);
+            return;
+        }
+        await DoAdminAsync();
+    }
+
+    private async Task DoAdminAsync()
+    {
+        _busyAdmin = true;
+        try
+        {
+            await Api.Users_DoAdminAsync(new EditClaimDTO { Email = _emailAdmin });
+            Snackbar.Add(string.Format(L["Admin_MadeAdminOk"], _emailAdmin), Severity.Success);
+            _emailAdmin = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            ApiErrorHelper.Handle(ex, Snackbar, L, Nav);
+        }
+        finally
+        {
+            _busyAdmin = false;
+            StateHasChanged();
+        }
+    }
+
+    // ---------- Acciones: eliminar usuario ----------
+    private async Task SubmitDeleteAsync()
+    {
+        await _formDelete!.Validate();
+        if (!_formDelete.IsValid)
+        {
+            Snackbar.Add(L["Admin_UserIdRequired"], Severity.Info);
+            return;
+        }
+
+        var input = _userInput.Trim();
+        if (string.IsNullOrEmpty(input))
+        {
+            Snackbar.Add(L["Admin_UserIdRequired"], Severity.Info);
+            return;
+        }
+
+        bool? ok = await Dialog.ShowMessageBox(
+            L["Admin_DeleteConfirmTitle"],
+            string.Format(L["Admin_DeleteConfirmMessage"], input),
+            yesText: L["Common_Delete"],
+            cancelText: L["Common_Cancel"],
+            options: new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small });
+
+        if (ok != true) return;
+
+        _busyDelete = true;
+        try
+        {
+            await Api.Users_DeleteByUserAsync(input);
+            Snackbar.Add(L["Admin_DeleteOk"], Severity.Success);
+            _userInput = string.Empty;
+            await LoadCountAsync();
+        }
+        catch (Exception ex)
+        {
+            ApiErrorHelper.Handle(ex, Snackbar, L, Nav);
+        }
+        finally
+        {
+            _busyDelete = false;
+            StateHasChanged();
+        }
+    }
+
+    // ---------- Validación / utilidades ----------
+    private string? EmailValidator(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return L["Validation_EmailRequired"];
+        try { _ = new System.Net.Mail.MailAddress(v); return null; }
+        catch { return L["Validation_EmailInvalid"]; }
+    }
+
+    private async Task DownloadCsvAsync()
+    {
+        var now = DateTime.Now;
+        var csvHeader = L["Admin_CsvHeader"];
+        var csv = csvHeader + "\r\n" + $"{now:yyyy-MM-dd HH:mm:ss},{_users}\r\n";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+
+        var fileNamePrefix = L["Admin_CsvPrefix"];
+        await JS.InvokeVoidAsync("downloadFile",
+            $"{fileNamePrefix}_{now:yyyyMMdd_HHmmss}.csv",
+            "text/csv;charset=utf-8",
+            Convert.ToBase64String(bytes));
+    }
+}

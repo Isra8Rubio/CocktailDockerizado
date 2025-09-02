@@ -1,0 +1,633 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AlcoholTypes_Title" xml:space="preserve">
+    <value>Alcohol types</value>
+  </data>
+  <data name="AlcoholTypes_SelectHint" xml:space="preserve">
+    <value>Select a type to see cocktails.</value>
+  </data>
+  <data name="AlcoholTypes_Label" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="AlcoholTypes_Placeholder" xml:space="preserve">
+    <value>Pick an option…</value>
+  </data>
+  <data name="AlcoholTypes_Error_LoadTypes" xml:space="preserve">
+    <value>Error loading alcohol types</value>
+  </data>
+  <data name="AlcoholTypes_Error_LoadDrinks" xml:space="preserve">
+    <value>Error loading cocktails</value>
+  </data>
+  <data name="AlcoholType_Alcoholic" xml:space="preserve">
+    <value>Alcoholic</value>
+  </data>
+  <data name="AlcoholType_NonAlcoholic" xml:space="preserve">
+    <value>Non alcoholic</value>
+  </data>
+  <data name="AlcoholType_OptionalAlcohol" xml:space="preserve">
+    <value>Optional alcohol</value>
+  </data>
+  <data name="Categories_Title" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Categories_Label" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Categories_Placeholder" xml:space="preserve">
+    <value>Pick a category…</value>
+  </data>
+  <data name="Categories_SelectHint" xml:space="preserve">
+    <value>Select a category to see cocktails.</value>
+  </data>
+  <data name="Categories_Error_LoadCategories" xml:space="preserve">
+    <value>Error loading categories</value>
+  </data>
+  <data name="Categories_Error_LoadDrinks" xml:space="preserve">
+    <value>Error loading cocktails</value>
+  </data>
+  <data name="Category_OrdinaryDrink" xml:space="preserve">
+    <value>Ordinary drink</value>
+  </data>
+  <data name="Category_Cocktail" xml:space="preserve">
+    <value>Cocktail</value>
+  </data>
+  <data name="Category_MilkFloatShake" xml:space="preserve">
+    <value>Milk / Float / Shake</value>
+  </data>
+  <data name="Category_OtherUnknown" xml:space="preserve">
+    <value>Other / Unknown</value>
+  </data>
+  <data name="Category_Cocoa" xml:space="preserve">
+    <value>Cocoa</value>
+  </data>
+  <data name="Category_Shot" xml:space="preserve">
+    <value>Shot</value>
+  </data>
+  <data name="Category_CoffeeTea" xml:space="preserve">
+    <value>Coffee / Tea</value>
+  </data>
+  <data name="Category_HomemadeLiqueur" xml:space="preserve">
+    <value>Homemade liqueur</value>
+  </data>
+  <data name="Category_PunchPartyDrink" xml:space="preserve">
+    <value>Punch / Party drink</value>
+  </data>
+  <data name="Category_Beer" xml:space="preserve">
+    <value>Beer</value>
+  </data>
+  <data name="Category_SoftDrink" xml:space="preserve">
+    <value>Soft drink</value>
+  </data>
+  <data name="Glasses_Title" xml:space="preserve">
+    <value>Glasses</value>
+  </data>
+  <data name="Glasses_Label" xml:space="preserve">
+    <value>Glass</value>
+  </data>
+  <data name="Glasses_Placeholder" xml:space="preserve">
+    <value>Pick a glass…</value>
+  </data>
+  <data name="Glasses_SelectHint" xml:space="preserve">
+    <value>Select a glass to see cocktails.</value>
+  </data>
+  <data name="Glasses_Error_LoadGlasses" xml:space="preserve">
+    <value>Error loading glasses</value>
+  </data>
+  <data name="Glasses_Error_LoadDrinks" xml:space="preserve">
+    <value>Error loading cocktails</value>
+  </data>
+  <data name="Nav_Section_General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Nav_Section_Cocktails" xml:space="preserve">
+    <value>Cocktails</value>
+  </data>
+  <data name="Nav_Alcohol" xml:space="preserve">
+    <value>Alcohol</value>
+  </data>
+  <data name="Nav_Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Nav_Glasses" xml:space="preserve">
+    <value>Glasses</value>
+  </data>
+  <data name="Nav_Version" xml:space="preserve">
+    <value>v{0} • BlazorCocktails</value>
+  </data>
+  <data name="Theme_Toggle" xml:space="preserve">
+    <value>Switch theme</value>
+  </data>
+  <data name="Nav_Menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="CocktailDetail_Title" xml:space="preserve">
+    <value>Detail</value>
+  </data>
+  <data name="CocktailDetail_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="CocktailDetail_NotFound" xml:space="preserve">
+    <value>Cocktail not found.</value>
+  </data>
+  <data name="CocktailDetail_Error_Load" xml:space="preserve">
+    <value>Error loading detail</value>
+  </data>
+  <data name="CocktailDetail_Ingredient_Title" xml:space="preserve">
+    <value>Ingredient: {0}</value>
+  </data>
+  <data name="CocktailDetail_CategoryGlass_Format" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="IngredientDialog_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="IngredientDialog_NotFound" xml:space="preserve">
+    <value>Ingredient not found.</value>
+  </data>
+  <data name="Pager_Previous" xml:space="preserve">
+    <value>Previus</value>
+  </data>
+  <data name="Pager_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Chart_Home_AlcoholTypes_Title" xml:space="preserve">
+    <value>Cocktails by alcohol type</value>
+  </data>
+  <data name="Chart_Empty" xml:space="preserve">
+    <value>No data to chart.</value>
+  </data>
+  <data name="Chart_ClickToSelect" xml:space="preserve">
+    <value>Click on segment to obtain %</value>
+  </data>
+  <data name="Category_Others" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Chart_Category_Title" xml:space="preserve">
+    <value>Cocktails by category</value>
+  </data>
+  <data name="Random_Title" xml:space="preserve">
+    <value>Random cocktail</value>
+  </data>
+  <data name="Random_Refresh" xml:space="preserve">
+    <value>Refresh now</value>
+  </data>
+  <data name="Random_LastUpdated" xml:space="preserve">
+    <value>Last update:</value>
+  </data>
+  <data name="Random_NoData" xml:space="preserve">
+    <value>No random cocktail yet.</value>
+  </data>
+  <data name="MainLayout_Login" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="MainLayout_Register" xml:space="preserve">
+    <value>Sign up</value>
+  </data>
+  <data name="MainLayout_Lang_Spanish" xml:space="preserve">
+    <value>Spanish</value>
+  </data>
+  <data name="MainLayout_Lang_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="MainLayout_AppTitle" xml:space="preserve">
+    <value>Cocktail Bar</value>
+  </data>
+  <data name="Login_Title" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Login_EmailLabel" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Login_EmailPlaceholder" xml:space="preserve">
+    <value>  you@example.com</value>
+  </data>
+  <data name="Login_PasswordLabel" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Login_Remember" xml:space="preserve">
+    <value>Remember me</value>
+  </data>
+  <data name="Login_Forgot" xml:space="preserve">
+    <value>Forgot your password?</value>
+  </data>
+  <data name="Login_Submit" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Login_CreateAccount" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Register_Title" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Register_EmailLabel" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Register_EmailPlaceholder" xml:space="preserve">
+    <value>you@example.com</value>
+  </data>
+  <data name="Register_PasswordLabel" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Register_ConfirmLabel" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="Register_Submit" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Register_GoLogin" xml:space="preserve">
+    <value>I already have an account</value>
+  </data>
+  <data name="MainLayout_Menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Register_Working" xml:space="preserve">
+    <value>Working…</value>
+  </data>
+  <data name="Register_Success" xml:space="preserve">
+    <value>Account created successfully. Please log in.</value>
+  </data>
+  <data name="Register_EmailRequired" xml:space="preserve">
+    <value>Email is required.</value>
+  </data>
+  <data name="Register_EmailInvalid" xml:space="preserve">
+    <value>Invalid email format.</value>
+  </data>
+  <data name="Register_PasswordRequired" xml:space="preserve">
+    <value>Password is required.</value>
+  </data>
+  <data name="Register_PasswordMin" xml:space="preserve">
+    <value>Password must be at least 6 characters.</value>
+  </data>
+  <data name="Register_ConfirmRequired" xml:space="preserve">
+    <value>Please confirm your password.</value>
+  </data>
+  <data name="Register_PasswordsDontMatch" xml:space="preserve">
+    <value>Passwords do not match.</value>
+  </data>
+  <data name="MainLayout_Logout" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Login_Working" xml:space="preserve">
+    <value>Working…</value>
+  </data>
+  <data name="Login_EmailRequired" xml:space="preserve">
+    <value>Email is required.</value>
+  </data>
+  <data name="Login_EmailInvalid" xml:space="preserve">
+    <value>Invalid email format.</value>
+  </data>
+  <data name="Login_PasswordRequired" xml:space="preserve">
+    <value>Password is required.</value>
+  </data>
+  <data name="Login_Success" xml:space="preserve">
+    <value>Signed in successfully.</value>
+  </data>
+  <data name="Login_Failed" xml:space="preserve">
+    <value>Couldn’t sign in.</value>
+  </data>
+  <data name="Home_HeroTitle" xml:space="preserve">
+    <value>Your cocktails, stats &amp; recipes</value>
+  </data>
+  <data name="Home_HeroSubtitle" xml:space="preserve">
+    <value>Browse categories, alcohol types and discover a random cocktail every day.</value>
+  </data>
+  <data name="Home_HeroPrimary" xml:space="preserve">
+    <value>Browse categories</value>
+  </data>
+  <data name="Home_HeroSecondary" xml:space="preserve">
+    <value>Alcohol types</value>
+  </data>
+  <data name="Home_AlcoholChartTitle" xml:space="preserve">
+    <value>Cocktails by alcohol type</value>
+  </data>
+  <data name="Home_CategoryChartTitle" xml:space="preserve">
+    <value>Cocktails by category</value>
+  </data>
+  <data name="Home_RandomTitle" xml:space="preserve">
+    <value>Random cocktail</value>
+  </data>
+  <data name="Home_WhatsNewTitle" xml:space="preserve">
+    <value>What’s new</value>
+  </data>
+  <data name="Home_StatsFootnote" xml:space="preserve">
+    <value>Stats driven by our dataset.</value>
+  </data>
+  <data name="Home_StatsTitle" xml:space="preserve">
+    <value>Stats</value>
+  </data>
+  <data name="Home_RandomHeading" xml:space="preserve">
+    <value>Want a cocktail but not sure which one?</value>
+  </data>
+  <data name="Home_RandomCopy" xml:space="preserve">
+    <value>Let chance surprise you. Reveal a recipe instantly or keep trying until you find your favorite.</value>
+  </data>
+  <data name="Home_StatsHeading" xml:space="preserve">
+    <value>Curious about the stats?</value>
+  </data>
+  <data name="Home_StatsCopy" xml:space="preserve">
+    <value>See how our recipes break down by spirit and category.</value>
+  </data>
+  <data name="Home_StatsPoint1" xml:space="preserve">
+    <value>% of cocktails with/without alcohol.</value>
+  </data>
+  <data name="Home_StatsPoint2" xml:space="preserve">
+    <value>Top categories by popularity.</value>
+  </data>
+  <data name="Home_StatsPoint3" xml:space="preserve">
+    <value>Trends to help pick your next mix.</value>
+  </data>
+  <data name="Footer_Privacy" xml:space="preserve">
+    <value>Privacity</value>
+  </data>
+  <data name="Footer_Terms" xml:space="preserve">
+    <value>Terms</value>
+  </data>
+  <data name="Password_ForgotTitle" xml:space="preserve">
+    <value>Forgot your password?</value>
+  </data>
+  <data name="Password_ForgotIntro" xml:space="preserve">
+    <value>Enter your email and we’ll send you a reset link.</value>
+  </data>
+  <data name="Password_ResetEmail" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Password_Send" xml:space="preserve">
+    <value>Send instructions</value>
+  </data>
+  <data name="Password_BackToLogin" xml:space="preserve">
+    <value>Back to sign in</value>
+  </data>
+  <data name="Password_ForgotSent" xml:space="preserve">
+    <value>We’ve sent you instructions.</value>
+  </data>
+  <data name="Password_ForgotError" xml:space="preserve">
+    <value>Couldn’t send the email</value>
+  </data>
+  <data name="Password_ResetTitle" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="Password_ResetSubtitle" xml:space="preserve">
+    <value>Set new password</value>
+  </data>
+  <data name="Password_New" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="Password_Confirm" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="Password_NoMatch" xml:space="preserve">
+    <value>Passwords don’t match</value>
+  </data>
+  <data name="Password_Save" xml:space="preserve">
+    <value>Save new password</value>
+  </data>
+  <data name="Password_GoLogin" xml:space="preserve">
+    <value>Go to sign in</value>
+  </data>
+  <data name="Password_ResetDone" xml:space="preserve">
+    <value>Password reset! You can sign in now.</value>
+  </data>
+  <data name="Password_ResetError" xml:space="preserve">
+    <value>Couldn’t reset</value>
+  </data>
+  <data name="Home_CarouselCopy_Title" xml:space="preserve">
+    <value>A toast to friendship</value>
+  </data>
+  <data name="Home_CarouselCopy_Body" xml:space="preserve">
+    <value>The best cocktails are enjoyed together. Share recipes, laughs and little victories with your people. Pick a drink, split the roles—shaker, pourer, DJ—and create moments worth a toast.</value>
+  </data>
+  <data name="Admin_UsersTitle" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Admin_DownloadCsv" xml:space="preserve">
+    <value>Download CSV</value>
+  </data>
+  <data name="Admin_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Admin_TotalRegistered" xml:space="preserve">
+    <value>Total registered</value>
+  </data>
+  <data name="Admin_LastUpdate" xml:space="preserve">
+    <value>Last update:</value>
+  </data>
+  <data name="Admin_GrantAdminTitle" xml:space="preserve">
+    <value>Grant “Admin” role</value>
+  </data>
+  <data name="Admin_UserEmailLabel" xml:space="preserve">
+    <value>User email*</value>
+  </data>
+  <data name="Admin_Processing" xml:space="preserve">
+    <value>Processing…</value>
+  </data>
+  <data name="Admin_MakeAdmin" xml:space="preserve">
+    <value>Make admin</value>
+  </data>
+  <data name="Admin_GrantAdminHelp" xml:space="preserve">
+    <value>Enter the exact user email. If the user is already admin or the email doesn’t exist, a warning will be shown.</value>
+  </data>
+  <data name="Admin_LoadCountError" xml:space="preserve">
+    <value>Error loading count: {0}</value>
+  </data>
+  <data name="Admin_EmailCheck" xml:space="preserve">
+    <value>Check the email: the field is required and must be valid.</value>
+  </data>
+  <data name="Admin_MadeAdminOk" xml:space="preserve">
+    <value>‘{0}’ is now an admin.</value>
+  </data>
+  <data name="Admin_MakeAdminError" xml:space="preserve">
+    <value>Couldn’t grant admin: {0}</value>
+  </data>
+  <data name="Validation_EmailRequired" xml:space="preserve">
+    <value>Email is required.</value>
+  </data>
+  <data name="Validation_EmailInvalid" xml:space="preserve">
+    <value>Invalid email.</value>
+  </data>
+  <data name="Common_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Common_UnexpectedError" xml:space="preserve">
+    <value>Unexpected error: {0}</value>
+  </data>
+  <data name="Admin_CsvHeader" xml:space="preserve">
+    <value>date,total_users</value>
+  </data>
+  <data name="Admin_CsvPrefix" xml:space="preserve">
+    <value>users_stats</value>
+  </data>
+  <data name="Err_Generic" xml:space="preserve">
+    <value>Something went wrong. Please try again.</value>
+  </data>
+  <data name="Err_BadRequest" xml:space="preserve">
+    <value>Bad request.</value>
+  </data>
+  <data name="Err_Unauthorized" xml:space="preserve">
+    <value>Unauthorized or session expired.</value>
+  </data>
+  <data name="Err_Forbidden" xml:space="preserve">
+    <value>You don’t have permission to perform this action.</value>
+  </data>
+  <data name="Err_NotFound" xml:space="preserve">
+    <value>Resource not found.</value>
+  </data>
+  <data name="Err_Conflict" xml:space="preserve">
+    <value>Operation conflict.</value>
+  </data>
+  <data name="Admin_DeleteTitle" xml:space="preserve">
+    <value>Delete user</value>
+  </data>
+  <data name="Admin_UserIdLabel" xml:space="preserve">
+    <value>User Id*</value>
+  </data>
+  <data name="Admin_UserIdRequired" xml:space="preserve">
+    <value>The name or email is required.</value>
+  </data>
+  <data name="Admin_DeleteConfirmTitle" xml:space="preserve">
+    <value>Confirm deletion</value>
+  </data>
+  <data name="Admin_DeleteConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to delete user {0}? This action cannot be undone.</value>
+  </data>
+  <data name="Admin_DeleteOk " xml:space="preserve">
+    <value>User deleted successfully.</value>
+  </data>
+  <data name="Admin_DeleteError" xml:space="preserve">
+    <value>Could not delete: {0}</value>
+  </data>
+  <data name="Admin_DeleteHelp" xml:space="preserve">
+    <value>Enter the exact user Id (GUID). If it doesn't exist, a warning will be shown.</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>CoctelBar</value>
+  </data>
+  <data name="Admin_UserOrEmailLabel" xml:space="preserve">
+    <value>Write the user or email</value>
+  </data>
+</root>

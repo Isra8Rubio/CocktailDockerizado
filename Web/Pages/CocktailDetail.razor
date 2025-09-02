@@ -1,0 +1,157 @@
+﻿@page "/cocktail/{id}"
+
+@using API.APIService
+@using BlazorCocktails.Client.Shared
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Localization
+@using MudBlazor
+@using System.Globalization
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IDialogService Dialog
+@inject IStringLocalizer<App> L
+
+<PageTitle>@(detail?.StrDrink ?? L["CocktailDetail_Title"])</PageTitle>
+
+<!-- ========= Header ========= -->
+<MudGrid AlignItems="Center" Class="mb-2">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4" Truncate="true" Class="m-0">
+            @(detail?.StrDrink ?? L["CocktailDetail_Title"])
+        </MudText>
+    </MudItem>
+</MudGrid>
+
+<!-- ========= Body / estados ========= -->
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" Class="mt-2" />
+}
+else if (detail is null)
+{
+    <MudText Color="Color.Error">@L["CocktailDetail_NotFound"]</MudText>
+}
+else
+{
+    <MudGrid Class="mt-2" AlignItems="Start" Spacing="3">
+        <!-- Imagen -->
+        <MudItem xs="12" md="4" lg="3">
+            <img src="@detail.StrDrinkThumb"
+                 alt="@detail.StrDrink"
+                 style="max-width:100%; width:100%; max-height:420px; object-fit:cover; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.22);" />
+        </MudItem>
+
+        <!-- Texto/acciones -->
+        <MudItem xs="12" md="8" lg="9">
+            <MudStack Spacing="2">
+                <MudStack Row="true" Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.ArrowBack"
+                               Href="@BackUrl">
+                        @L["CocktailDetail_Back"]
+                    </MudButton>
+                </MudStack>
+
+                <MudText Typo="Typo.subtitle1">
+                    @L["CocktailDetail_CategoryGlass_Format", detail.StrCategory, detail.StrGlass]
+                </MudText>
+
+                <MudText>
+                    @GetLocalizedInstructions(detail)
+                </MudText>
+
+                @if (detail.Ingredients is not null && detail.Ingredients.Any())
+                {
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-1">
+                        @foreach (var ing in detail.Ingredients)
+                        {
+                            <MudChip T="string"
+                                     OnClick="@(() => ShowIngredient(Sanitize(ing.Name)))"
+                                     Color="Color.Primary"
+                                     Variant="Variant.Outlined"
+                                     Disabled="@string.IsNullOrWhiteSpace(ing.Name)"
+                                     Class="mr-1 mb-1">
+                                @(!string.IsNullOrWhiteSpace(ing.Measure) ? $"{ing.Name} — {ing.Measure}" : ing.Name)
+                            </MudChip>
+                        }
+                    </MudStack>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    // ========= Parámetros y navegación =========
+    [Parameter] public string? id { get; set; }
+
+    // Lee ?from=alcohol|categories|glasses
+    [SupplyParameterFromQuery(Name = "from")]
+    public string? From { get; set; }
+
+    private string BackUrl =>
+        (From ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "alcohol" => "/alcohol",
+            "categories" => "/categories",
+            "glasses" => "/glasses",
+            _ => "/" // fallback
+        };
+
+    // ========= Estado =========
+    private CocktailDetailDTO? detail;
+    private bool loading;
+
+    // ========= Lifecycle =========
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(id)) return;
+
+        loading = true;
+        try
+        {
+            detail = await Api.Cocktails_GetByIdAsync(id);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"{L["CocktailDetail_Error_Load"]}: {ex.Message}", Severity.Error);
+            detail = null;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    // ========= Helpers/UI =========
+    private static string Sanitize(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+        var x = s;
+        var i = x.IndexOf('—'); if (i >= 0) x = x[..i];
+        i = x.IndexOf('('); if (i >= 0) x = x[..i];
+        return x.Trim();
+    }
+
+    private void ShowIngredient(string name)
+    {
+        var parameters = new DialogParameters { ["Name"] = name };
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+        var title = L["CocktailDetail_Ingredient_Title", name];
+        _ = Dialog.ShowAsync<IngredientDialog>(title, parameters, options);
+    }
+
+    private static string? GetLocalizedInstructions(CocktailDetailDTO d)
+        => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "es"
+           ? (!string.IsNullOrWhiteSpace(d.StrInstructionsES) ? d.StrInstructionsES : d.StrInstructions)
+           : d.StrInstructions;
+}

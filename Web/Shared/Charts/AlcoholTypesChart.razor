@@ -1,0 +1,158 @@
+﻿@using API.APIService
+@using Microsoft.Extensions.Localization
+@using MudBlazor
+
+@inject APIClient Api
+@inject IStringLocalizer<App> L
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-4 h-100">
+    <!-- Stack en columna ocupando el 100% de alto -->
+    <MudStack Spacing="2" Class="h-100">
+        <!-- Título centrado -->
+        <MudText Typo="Typo.h6" Align="Align.Center">
+            @L["Chart_Home_AlcoholTypes_Title"]
+        </MudText>
+
+        @if (loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (series is null || labels is null || series.Length == 0 || labels.Length == 0)
+        {
+            <MudText Color="Color.Secondary">@L["Chart_Empty"]</MudText>
+        }
+        else
+        {
+            <!-- Contenedor flexible: el chart "estira" -->
+            <div class="chart-flex">
+                <MudChart ChartType="ChartType.Donut"
+                          InputLabels="labels"
+                          InputData="series"
+                          @bind-SelectedIndex="selectedIndex"
+                          Width="100%"
+                          Height="100%" />
+            </div>
+
+            <!-- Hint centrado -->
+            <MudText Typo="Typo.subtitle2" Class="chart-hint">
+                @if (selectedIndex >= 0 && labels is not null && series is not null)
+                {
+                    var count = series[selectedIndex];
+                    var total = series.Sum();
+                    var pct = total > 0 ? Math.Round(count / total * 100, 1) : 0;
+                    @($"{labels[selectedIndex]}: {count:N0} ({pct}%)")
+                }
+                else
+                {
+                    @L["Chart_ClickToSelect"]
+                }
+            </MudText>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    private bool loading = true;
+    private string[]? labels;
+    private double[]? series;
+    private int selectedIndex = -1;
+
+    protected override async Task OnInitializedAsync() => await LoadCountsAsync();
+
+    private static string MapToApiFilter(string? raw) =>
+        (raw ?? "").Trim().ToLowerInvariant() switch
+        {
+            "alcoholic" => "Alcoholic",
+            "non alcoholic" => "Non_Alcoholic",
+            "optional alcohol" => "Optional_alcohol",
+            _ => (raw ?? "").Replace(' ', '_')
+        };
+
+    private async Task LoadCountsAsync()
+    {
+        loading = true;
+        try
+        {
+            var types = await Api.Cocktails_GetAlcoholTypesAsync();
+
+            var names = types?
+                .Select(t => t.StrAlcoholic)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s switch
+                {
+                    "Alcoholic" => 0,
+                    "Non alcoholic" => 1,
+                    "Optional alcohol" => 2,
+                    _ => 99
+                })
+                .ToList() ?? new();
+
+            if (names.Count == 0)
+            {
+                labels = Array.Empty<string>();
+                series = Array.Empty<double>();
+                return;
+            }
+
+            var filters = names.Select(MapToApiFilter).ToList();
+            var results = await Task.WhenAll(filters.Select(f => Api.Cocktails_GetByTypeAsync(f)));
+
+            labels = names.Select(LocalizeAlcoholType).ToArray();
+            series = results.Select(r => (double)(r?.Count ?? 0)).ToArray();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Error loading chart: {ex.Message}", Severity.Error);
+            labels = Array.Empty<string>();
+            series = Array.Empty<double>();
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string LocalizeAlcoholType(string? apiValue)
+    {
+        var key = (apiValue ?? "").Trim().ToLowerInvariant() switch
+        {
+            "alcoholic" => "AlcoholType_Alcoholic",
+            "non alcoholic" => "AlcoholType_NonAlcoholic",
+            "optional alcohol" => "AlcoholType_OptionalAlcohol",
+            _ => apiValue ?? ""
+        };
+        return L[key].Value;
+    }
+}
+
+
+@*
+ Qué hacemos:
+  - Mostramos un gráfico donut con el reparto de cócteles por **tipo de alcohol**
+    (Alcoholic / Non alcoholic / Optional alcohol).
+
+ Flujo de datos:
+  - Al iniciar (OnInitializedAsync) cargamos los tipos con Api.Cocktails_GetAlcoholTypesAsync().
+  - Normalizamos los nombres y los ordenamos (Alcoholic, Non alcoholic, Optional alcohol).
+  - Convertimos cada nombre al filtro de la API (MapToApiFilter: p. ej. "Non alcoholic" -> "Non_Alcoholic").
+  - Pedimos en paralelo las listas por tipo (Task.WhenAll de Cocktails_GetByTypeAsync) y calculamos:
+      • labels: nombres localizados (LocalizeAlcoholType + .resx).
+      • series: número de cócteles por tipo.
+
+ UI e interacción:
+  - <MudChart ChartType="Donut"> con alto 300px; bind a SelectedIndex para detectar el segmento activo.
+  - Bajo el gráfico mostramos el texto dinámico: etiqueta, recuento y porcentaje sobre el total,
+    o un hint si no hay selección.
+  - Estados de carga y vacíos: barra indeterminada mientras carga; mensaje "Chart_Empty" si no hay datos.
+
+ Estado/errores:
+  - Campos: loading, labels[], series[], selectedIndex.
+  - Ante errores de API, mostramos Snackbar y dejamos arrays vacíos de forma segura.
+
+ Notas:
+  - Localizamos las etiquetas de tipo con claves .resx (AlcoholType_*).
+  - Si la API no devuelve tipos válidos, mantenemos el gráfico vacío.
+*@

@@ -1,0 +1,172 @@
+﻿@page "/categories"
+
+@using API.APIService
+@using BlazorCocktails.Client.Shared
+@using Microsoft.Extensions.Localization
+@using System.Linq
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IStringLocalizer<App> L
+
+<PageTitle>@L["Categories_Title"]</PageTitle>
+
+<MudStack Spacing="2">
+    @* === Select de categorías === *@
+    @if (categories is null)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    else
+    {
+        <MudSelect T="string"
+                   Label="@L["Categories_Label"]"
+                   Dense="true"
+                   Clearable="true"
+                   Placeholder="@L["Categories_Placeholder"]"
+                   Value="selectedCategory"
+                   ValueChanged="OnCategoryChanged"
+                   Immediate="true"
+                   Disabled="@isLoading">
+            @foreach (var c in categories)
+            {
+                <MudSelectItem Value="@c.StrCategory">
+                    @DisplayCategory(c.StrCategory)
+                </MudSelectItem>
+            }
+        </MudSelect>
+    }
+
+    @* === Resultados / estado === *@
+    @if (isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Class="mt-2" />
+    }
+    else if (drinks is null)
+    {
+        <MudText Class="mt-4" Color="Color.Secondary">
+            @L["Categories_SelectHint"]
+        </MudText>
+    }
+    else
+    {
+        @if (drinks.Count > pageSize)
+        {
+            <Pager TotalItems="drinks.Count"
+                   PageSize="pageSize"
+                   Radius="2"
+                   @bind-CurrentPage="page" />
+        }
+
+        <MudGrid Class="mt-2">
+            @foreach (var drink in PagedDrinks)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Class="mb-4 hover-elevate" Style="cursor:pointer"
+                             @onclick="@(() => Nav.NavigateTo($"/cocktail/{drink.IdDrink}?from=categories"))">
+                        <MudCardMedia Image="@drink.StrDrinkThumb" Height="160" Alt="@drink.StrDrink" />
+                        <MudCardContent>
+                            <MudText Typo="Typo.subtitle2">@drink.StrDrink</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    // ---------- Estado ----------
+    private List<CategoryDTO>? categories;
+    private string? selectedCategory;
+
+    private List<CocktailItemDTO>? drinks;
+    private bool isLoading;
+    private long lastRequestId;
+    private int page = 1;
+    private const int pageSize = 8;
+
+    // ---------- Paginación ----------
+    private IEnumerable<CocktailItemDTO> PagedDrinks =>
+        (drinks ?? Enumerable.Empty<CocktailItemDTO>())
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+
+    // ---------- Lifecycle ----------
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            categories = (await Api.Cocktails_GetCategoriesAsync())?.ToList();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"{L["Categories_Error_LoadCategories"]}: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ---------- Handlers ----------
+    private async Task OnCategoryChanged(string? value)
+    {
+        selectedCategory = value;
+        page = 1;
+
+        if (string.IsNullOrWhiteSpace(selectedCategory))
+        {
+            drinks = null;
+            StateHasChanged();
+            return;
+        }
+
+        drinks = null;
+        isLoading = true;
+        StateHasChanged();
+
+        var reqId = System.Threading.Interlocked.Increment(ref lastRequestId);
+
+        try
+        {
+            var result = (await Api.Cocktails_GetByCategoryAsync(selectedCategory))?.ToList();
+            if (reqId != lastRequestId) return;
+            drinks = result ?? new();
+        }
+        catch (ApiException ex)
+        {
+            if (reqId == lastRequestId)
+            {
+                Snackbar.Add($"{L["Categories_Error_LoadDrinks"]}: {ex.Message}", Severity.Error);
+                drinks = new();
+            }
+        }
+        finally
+        {
+            if (reqId == lastRequestId)
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    // ---------- Helpers ----------
+    private string DisplayCategory(string? apiValue)
+    {
+        var key = (apiValue ?? "").Trim().ToLowerInvariant() switch
+        {
+            "ordinary drink" => "Category_OrdinaryDrink",
+            "cocktail" => "Category_Cocktail",
+            "shake" => "Category_MilkFloatShake",
+            "other / unknown" => "Category_OtherUnknown",
+            "cocoa" => "Category_Cocoa",
+            "shot" => "Category_Shot",
+            "coffee / tea" => "Category_CoffeeTea",
+            "homemade liqueur" => "Category_HomemadeLiqueur",
+            "punch / party drink" => "Category_PunchPartyDrink",
+            "beer" => "Category_Beer",
+            "soft drink" => "Category_SoftDrink",
+            _ => apiValue ?? ""
+        };
+        return L[key];
+    }
+}

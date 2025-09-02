@@ -1,0 +1,195 @@
+﻿@page "/alcohol"
+
+@using System.Linq
+@using API.APIService
+@using BlazorCocktails.Client.Shared
+@using Microsoft.Extensions.Localization
+
+@inject APIClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IStringLocalizer<App> L
+
+<PageTitle>@L["AlcoholTypes_Title"]</PageTitle>
+
+<HeadContent>
+    <link rel="icon" type="image/svg+xml" href="icons/alcohol.svg" />
+</HeadContent>
+
+<MudStack Spacing="2">
+    @* === Select de tipos === *@
+    @if (alcoholTypes is null)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    else
+    {
+        <MudSelect T="string"
+                   Label="@L["AlcoholTypes_Label"]"
+                   Dense="true"
+                   Clearable="true"
+                   Placeholder="@L["AlcoholTypes_Placeholder"]"
+                   Value="selectedAlcoholType"
+                   ValueChanged="OnSelectedAlcoholTypeChanged"
+                   Immediate="true"
+                   Disabled="@isLoading">
+            @foreach (var t in alcoholTypes)
+            {
+                <MudSelectItem Value="@t.StrAlcoholic">
+                    @DisplayAlcoholType(t.StrAlcoholic)
+                </MudSelectItem>
+            }
+        </MudSelect>
+    }
+
+    @* === Resultados / estado === *@
+    @if (isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Class="mt-2" />
+    }
+    else if (drinks is null)
+    {
+        <MudText Class="mt-4" Color="Color.Secondary">
+            @L["AlcoholTypes_SelectHint"]
+        </MudText>
+    }
+    else
+    {
+        @if (drinks.Count > pageSize)
+        {
+            <Pager TotalItems="drinks.Count"
+                   PageSize="pageSize"
+                   Radius="2"
+                   @bind-CurrentPage="page" />
+        }
+
+        <MudGrid Class="mt-2">
+            @foreach (var drink in PagedDrinks)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Class="mb-4 hover-elevate" Style="cursor:pointer"
+                             @onclick="@(() => Nav.NavigateTo($"/cocktail/{drink.IdDrink}?from=alcohol"))">
+                        <MudCardMedia Image="@drink.StrDrinkThumb" Height="160" Alt="@drink.StrDrink" />
+                        <MudCardContent>
+                            <MudText Typo="Typo.subtitle2">@drink.StrDrink</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    // ---------- Estado ----------
+    private List<AlcoholTypeDTO>? alcoholTypes;
+    private List<CocktailItemDTO>? drinks;
+
+    private string? selectedAlcoholType;
+    private bool isLoading;
+    private long lastRequestId = 0;
+    private int page = 1;
+    private const int pageSize = 8;
+
+    // ---------- Paginación ----------
+    private IEnumerable<CocktailItemDTO> PagedDrinks =>
+        (drinks ?? Enumerable.Empty<CocktailItemDTO>())
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+
+    // ---------- Lifecycle ----------
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            alcoholTypes = (await Api.Cocktails_GetAlcoholTypesAsync())?.ToList();
+
+            // Cargar TODO por defecto
+            if (alcoholTypes?.Any() == true)
+                await LoadDrinksAsync(null);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"{L["AlcoholTypes_Error_LoadTypes"]}: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ---------- Handlers ----------
+    private async Task OnSelectedAlcoholTypeChanged(string? newValue)
+    {
+        selectedAlcoholType = newValue;
+        page = 1;
+        await LoadDrinksAsync(selectedAlcoholType);
+    }
+
+    // ---------- Data fetch ----------
+    private async Task LoadDrinksAsync(string? type)
+    {
+        isLoading = true;
+        drinks = null;
+        StateHasChanged();
+
+        var requestId = System.Threading.Interlocked.Increment(ref lastRequestId);
+
+        try
+        {
+            List<CocktailItemDTO> result;
+
+            if (string.IsNullOrWhiteSpace(type))
+            {
+                var dict = new Dictionary<string, CocktailItemDTO>();
+
+                foreach (var t in alcoholTypes ?? Enumerable.Empty<AlcoholTypeDTO>())
+                {
+                    var list = await Api.Cocktails_GetByTypeAsync(t.StrAlcoholic) ?? new List<CocktailItemDTO>();
+                    foreach (var d in list)
+                    {
+                        if (!string.IsNullOrWhiteSpace(d.IdDrink))
+                            dict[d.IdDrink] = d; // Deduplicate
+                    }
+                }
+
+                result = dict.Values
+                             .OrderBy(d => d.StrDrink)
+                             .ToList();
+            }
+            else
+            {
+                result = (await Api.Cocktails_GetByTypeAsync(type))?.ToList() ?? new();
+            }
+
+            if (requestId == lastRequestId)
+                drinks = result;
+        }
+        catch (ApiException ex)
+        {
+            if (requestId == lastRequestId)
+            {
+                Snackbar.Add($"{L["AlcoholTypes_Error_LoadDrinks"]}: {ex.Message}", Severity.Error);
+                drinks = new();
+            }
+        }
+        finally
+        {
+            if (requestId == lastRequestId)
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    // ---------- Helpers ----------
+    private string DisplayAlcoholType(string? apiValue)
+    {
+        var key = (apiValue ?? "").Trim().ToLowerInvariant() switch
+        {
+            "alcoholic" => "AlcoholType_Alcoholic",
+            "non alcoholic" => "AlcoholType_NonAlcoholic",
+            "optional alcohol" => "AlcoholType_OptionalAlcohol",
+            _ => apiValue ?? ""
+        };
+        return string.IsNullOrEmpty(key) ? "" : L[key];
+    }
+}
+
