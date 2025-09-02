@@ -23,7 +23,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
-// Limpiamos los providers por defecto y usamos NLog y httpcontext para capturar datoa de usuario
+// Limpiamos los providers por defecto y usamos NLog y httpcontext para capturar datos de usuario
 builder.Logging.ClearProviders();
 builder.Host.UseNLog();
 builder.Services.AddHttpContextAccessor();
@@ -44,23 +44,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 
-
-
-// CORS
+// =======================
+// CORS (ajustado para Compose)
+// =======================
+const string ComposeCors = "ComposeCors";
 builder.Services.AddCors(opt =>
 {
-    opt.AddPolicy("Wasm", p =>
-        p.WithOrigins("https://localhost:7032", "http://localhost:7032")
+    opt.AddPolicy(ComposeCors, p =>
+        p.WithOrigins(
+              "http://localhost:8080",
+              "https://localhost:8080",
+              "http://localhost:7032",   // <- sigues pudiendo probar fuera de Docker
+              "https://localhost:7032"
+          )
          .AllowAnyHeader()
          .AllowAnyMethod()
     );
 });
 
-
 // HostedService para refrescar cada X segundos
 builder.Services.AddHostedService<RandomCocktailHostedService>();
 builder.Services.AddScoped<RandomCocktailRepository>();
-
 
 // External Client
 builder.Services.AddSingleton(_ =>
@@ -72,14 +76,12 @@ builder.Services.AddSingleton(_ =>
 });
 builder.Services.AddTransient<CocktailClientService>();
 
-
 // Identity & Data Protection
 builder.Services.AddDataProtection();
 builder.Services
     .AddIdentity<Usuario, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
-
 
 // JWT Configuration usando AppConfiguration
 var jwtCfg = appConfig.Jwt;
@@ -128,7 +130,6 @@ builder.Services
         };
     });
 
-
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("isAdmin", policy =>
@@ -139,7 +140,6 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-
 // Controllers & Swagger
 builder.Services.AddControllers();
 builder.Services.AddOpenApiDocument(o =>
@@ -147,7 +147,6 @@ builder.Services.AddOpenApiDocument(o =>
     o.Title = "Cocktails API";
     o.Version = "v1";
 });
-
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -157,7 +156,6 @@ builder.Services.AddScoped<IValidator<CredentialsUserDTO>, CredentialsUserDTOVal
 builder.Services.AddScoped<IValidator<RegisterUserDTO>, RegisterUserDTOValidator>();
 builder.Services.AddTransient<IValidator<ForgotPasswordDTO>, ForgotPasswordDTOValidator>();
 builder.Services.AddTransient<IValidator<ResetPasswordDTO>, ResetPasswordDTOValidator>();
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -195,7 +193,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
 var app = builder.Build();
 
 try
@@ -203,17 +200,61 @@ try
     // Crear carpeta de logs si no existe
     Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "logs"));
 
+    // LOG: ver qué cadena de conexión está usando la API
+    var effectiveConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? "(null)";
+    app.Logger.LogInformation("DefaultConnection efectiva: {Conn}", effectiveConn);
+
+    // ==== Preparar Base de Datos (espera + migración/creación segura) ====
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Espera hasta 60s a que SQL esté listo (compose puede tardar)
+        for (int i = 1; i <= 30; i++)
+        {
+            try
+            {
+                if (db.Database.CanConnect())
+                {
+                    app.Logger.LogInformation("SQL Server disponible (intento {Attempt}).", i);
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogWarning(ex, "SQL aún no disponible (intento {Attempt}).", i);
+            }
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
+
+        // OJO: usa las versiones SINCRONAS para evitar dependencias de extensión
+        var pending = db.Database.GetPendingMigrations();
+        if (pending.Any())
+        {
+            app.Logger.LogInformation("Aplicando migraciones pendientes...");
+            db.Database.Migrate();
+        }
+        else
+        {
+            app.Logger.LogInformation("Sin migraciones: creando esquema actual con EnsureCreated()...");
+            db.Database.EnsureCreated();
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Error preparando la base de datos al inicio.");
+    }
+    // ==== Fin preparación BD ====
+
     app.UseRouting();
 
-    // Middlewares
+    // --- Swagger por defecto (Swashbuckle) ---
     app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Cocktail API 1");
-        options.RoutePrefix = string.Empty;
-    });
+    app.UseSwaggerUI();
 
-    app.UseCors("Wasm");
+    // *** CORS para Compose ***
+    app.UseCors(ComposeCors);
 
     app.UseAuthentication();
     app.UseAuthorization();
@@ -235,3 +276,54 @@ finally
 }
 
 
+//// ==== Seed de usuario/rol admin (solo dev) ====
+//try
+//{
+//    using var scope = app.Services.CreateScope();
+//    var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
+//    var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+//    // Puedes sobreescribir por variables de entorno Admin__Email / Admin__Password
+//    var adminEmail = builder.Configuration["Admin:Email"] ?? "admin@gmail.com";
+//    var adminPass = builder.Configuration["Admin:Password"] ?? "aA123456!";
+
+//    // Rol Admin
+//    const string adminRole = "Admin";
+//    if (!await roleMgr.RoleExistsAsync(adminRole))
+//        await roleMgr.CreateAsync(new IdentityRole(adminRole));
+
+//    // Usuario admin
+//    var admin = await userMgr.FindByEmailAsync(adminEmail);
+//    if (admin is null)
+//    {
+//        admin = new Usuario
+//        {
+//            UserName = adminEmail,
+//            Email = adminEmail,
+//            EmailConfirmed = true,
+//            SecurityStamp = Guid.NewGuid().ToString()
+//        };
+
+//        var res = await userMgr.CreateAsync(admin, adminPass);
+//        if (!res.Succeeded)
+//        {
+//            var errs = string.Join("; ", res.Errors.Select(e => e.Description));
+//            app.Logger.LogError("No se pudo crear el usuario admin: {Errors}", errs);
+//        }
+//    }
+
+//    // Asegura rol + claim isAdmin
+//    if (!await userMgr.IsInRoleAsync(admin, adminRole))
+//        await userMgr.AddToRoleAsync(admin, adminRole);
+
+//    var claims = await userMgr.GetClaimsAsync(admin);
+//    if (!claims.Any(c => c.Type == "isAdmin" && c.Value == "true"))
+//        await userMgr.AddClaimAsync(admin, new Claim("isAdmin", "true"));
+
+//    app.Logger.LogInformation("Seed admin OK: {Email}", adminEmail);
+//}
+//catch (Exception ex)
+//{
+//    app.Logger.LogError(ex, "Error sembrando usuario admin.");
+//}
+//// ==== Fin seed admin ====

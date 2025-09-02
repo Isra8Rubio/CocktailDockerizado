@@ -1,0 +1,32 @@
+services:
+  blazorcocktails.server:
+    image: ${DOCKER_REGISTRY-}blazorcocktailsserver
+    build:
+      context: .
+      dockerfile: Src/Server/BlazorCocktails.Server/Dockerfile
+
+  cocktail.api:
+    image: ${DOCKER_REGISTRY-}cocktailapi
+    build:
+      context: .
+      dockerfile: Src/Api/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocktailDb;User ID=sa;Password=aA123456!;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True
+    depends_on:
+      sqlserver:
+        condition: service_started
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: cocktail-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=aA123456!
+      - MSSQL_PID=Express
+    ports:
+      - "14333:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+volumes:
+  mssql-data:

@@ -13,6 +13,7 @@ using System.Globalization;
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.RootComponents.Add<App>("#app");
+
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // -------------------------------------
@@ -34,13 +35,21 @@ builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthStateProvider>();
 // -------------------------------------
 builder.Services.AddTransient<AuthRedirectHandler>();
 
+// Si se sirve desde http://localhost:<puerto> (Docker/IIS Express),
+// usamos la API publicada en http://localhost:8081.
+// Si no, mantenemos tu API de dev en https://localhost:7131.
+var baseUri = new Uri(builder.HostEnvironment.BaseAddress);
+bool isLocalHttpHost = baseUri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                       && baseUri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase);
+var apiBaseUrl = isLocalHttpHost ? "http://localhost:8081" : "https://localhost:7131";
+
 builder.Services.AddHttpClient<APIClient>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7131");
+    client.BaseAddress = new Uri(apiBaseUrl);
 })
 .AddHttpMessageHandler<AuthRedirectHandler>();
 
-// -------------------------------------F
+// -------------------------------------
 // Validación
 // -------------------------------------
 builder.Services.AddValidatorsFromAssemblyContaining<CredentialsUserDTOValidator>();

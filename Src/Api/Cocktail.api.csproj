@@ -8,7 +8,9 @@
 	  <AssemblyName>Cocktail.api</AssemblyName>
 	  <RootNamespace>Cocktail.api</RootNamespace>
 	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-	  <DockerfileContext>..\BlazorCocktails.Docker</DockerfileContext>
+	  <DockerfileContext>..\..</DockerfileContext>
+	  <DockerComposeProjectPath>..\..\docker-compose.dcproj</DockerComposeProjectPath>
+	  <UserSecretsId>ea8bafe2-9be1-42fe-acb6-b4bfde11f0b3</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +24,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.6" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="NLog" Version="6.0.1" />
     <PackageReference Include="NLog.Extensions.Logging" Version="6.0.1" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.1" />
@@ -30,7 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ApiClient\ApiClient.csproj" />
+    <ProjectReference Include="..\..\Libs\Core\Core.csproj" />
     <ProjectReference Include="..\..\Libs\Infra\Infraestructura.csproj" />
+    <ProjectReference Include="..\..\Web\BlazorCocktails.Client.csproj" />
   </ItemGroup>
 
 </Project>

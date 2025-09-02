@@ -1,6 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Reflection
+@using MudBlazor
 
 @inject IJSRuntime JS
 @inject NavigationManager Nav
@@ -21,7 +22,7 @@ else
         <MudPopoverProvider />
 
         <!-- Enrutado -->
-        <Router AppAssembly="@typeof(App).Assembly">
+        <Router AppAssembly="@typeof(Program).Assembly">
             <Found Context="routeData">
                 <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                     <NotAuthorized Context="authState">
