@@ -13,11 +13,10 @@
 @inject NavigationManager Nav
 @inject IDialogService Dialog
 
-<MudGrid Class="home-section" GutterSize="GutterSize.Small">
+<MudGrid Class="home-section" GutterSize="GutterSize.Small" AlignItems="Stretch">
 
-    <!-- === Tile: total usuarios === -->
     <MudItem xs="12" md="6" lg="4">
-        <MudPaper Class="home-card tinted pa-6">
+        <MudPaper Class="home-card tinted pa-6 h-100 d-flex flex-column">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                 <MudText Typo="Typo.h5">@L["Admin_UsersTitle"]</MudText>
 
@@ -38,8 +37,10 @@
             }
             else
             {
-                <MudText Typo="Typo.h1" Class="mt-3">@_users</MudText>
-                <MudText Class="opacity-80">@L["Admin_TotalRegistered"]</MudText>
+                <div class="flex-grow-1 d-flex flex-column justify-center">
+                    <MudText Typo="Typo.h1" Class="mt-3">@_users.Count()</MudText>
+                    <MudText Class="opacity-80">@L["Admin_TotalRegistered"]</MudText>
+                </div>
                 <MudText Class="opacity-60 text-sm mt-2">
                     @($"{L["Admin_LastUpdate"]} {_lastRefreshLocal}")
                 </MudText>
@@ -47,90 +48,86 @@
         </MudPaper>
     </MudItem>
 
-    <!-- === Tile: conceder rol Admin === -->
     <MudItem xs="12" md="6" lg="4">
-        <MudPaper Class="home-card tinted pa-6">
+        <MudPaper Class="home-card tinted pa-6 h-100 d-flex flex-column">
             <MudText Typo="Typo.h5" Class="mb-2">@L["Admin_GrantAdminTitle"]</MudText>
+            <div class="flex-grow-1">
+                <MudForm @ref="_formAdmin">
+                    <MudTextField T="string"
+                                  Variant="Variant.Filled"
+                                  Label=@L["Admin_UserEmailLabel"]
+                                  Placeholder="user@example.com"
+                                  @bind-Value="_emailAdmin"
+                                  Required="true"
+                                  Validation="@(new Func<string?, string?>(EmailValidator))"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Email"
+                                  Disabled="@_busyAdmin" />
 
-            <MudForm @ref="_formAdmin">
-                <MudTextField T="string"
-                              Variant="Variant.Filled"
-                              Label=@L["Admin_UserEmailLabel"]
-                              Placeholder="user@example.com"
-                              @bind-Value="_emailAdmin"
-                              Required="true"
-                              Validation="@(new Func<string?, string?>(EmailValidator))"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Email"
-                              Disabled="@_busyAdmin" />
-
-                <MudStack Row="true" Spacing="2" Class="mt-4">
-                    <MudButton Variant="Variant.Filled"
-                               Class="auth-btn"
-                               Disabled="@_busyAdmin"
-                               OnClick="SubmitAdminAsync">
-                        @(_busyAdmin? L["Admin_Processing"] : L["Admin_MakeAdmin"])
-                    </MudButton>
-
-                    <MudButton Variant="Variant.Outlined"
-                               Class="auth-btn-outline"
-                               Disabled="@_busyAdmin"
-                               OnClick="@(()=> _emailAdmin = string.Empty)">
-                        @L["Common_Clear"]
-                    </MudButton>
-                </MudStack>
-            </MudForm>
-
+                    <MudStack Row="true" Spacing="2" Class="mt-4">
+                        <MudButton Variant="Variant.Filled"
+                                   Class="auth-btn"
+                                   Disabled="@_busyAdmin"
+                                   OnClick="SubmitAdminAsync">
+                            @(_busyAdmin? L["Admin_Processing"] : L["Admin_MakeAdmin"])
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Class="auth-btn-outline"
+                                   Disabled="@_busyAdmin"
+                                   OnClick="@(()=> _emailAdmin = string.Empty)">
+                            @L["Common_Clear"]
+                        </MudButton>
+                    </MudStack>
+                </MudForm>
+            </div>
             <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 opacity-80">
                 @L["Admin_GrantAdminHelp"]
             </MudAlert>
         </MudPaper>
     </MudItem>
 
-    <!-- === Tile: eliminar usuario por UserName/Email === -->
     <MudItem xs="12" md="6" lg="4">
-        <MudPaper Class="home-card tinted pa-6">
+        <MudPaper Class="home-card tinted pa-6 h-100 d-flex flex-column">
             <MudText Typo="Typo.h5" Class="mb-2">@L["Admin_DeleteTitle"]</MudText>
+            <div class="flex-grow-1">
+                <MudForm @ref="_formDelete">
+                    <MudTextField T="string"
+                                  Variant="Variant.Filled"
+                                  Label=@L["Admin_UserOrEmailLabel"]
+                                  Placeholder="username o email"
+                                  @bind-Value="_userInput"
+                                  Required="true"
+                                  Immediate="true"
+                                  Disabled="@_busyDelete"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Badge" />
 
-            <MudForm @ref="_formDelete">
-                <MudTextField T="string"
-                              Variant="Variant.Filled"
-                              Label=@L["Admin_UserOrEmailLabel"]
-                              Placeholder="username o email"
-                              @bind-Value="_userInput"
-                              Required="true"
-                              Immediate="true"
-                              Disabled="@_busyDelete"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Badge" />
-
-                <MudStack Row="true" Spacing="2" Class="mt-4">
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Error"
-                               StartIcon="@Icons.Material.Filled.Delete"
-                               Disabled="@_busyDelete"
-                               Type="Button"
-                               OnClick="SubmitDeleteAsync">
-                        @(_busyDelete? L["Admin_Processing"] : L["Common_Delete"])
-                    </MudButton>
-
-                    <MudButton Variant="Variant.Outlined"
-                               Class="auth-btn-outline"
-                               Disabled="@_busyDelete"
-                               OnClick="@(()=> _userInput = string.Empty)">
-                        @L["Common_Clear"]
-                    </MudButton>
-                </MudStack>
-            </MudForm>
+                    <MudStack Row="true" Spacing="2" Class="mt-4">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   Disabled="@_busyDelete"
+                                   Type="Button"
+                                   OnClick="SubmitDeleteAsync">
+                            @(_busyDelete? L["Admin_Processing"] : L["Common_Delete"])
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Class="auth-btn-outline"
+                                   Disabled="@_busyDelete"
+                                   OnClick="@(()=> _userInput = string.Empty)">
+                            @L["Common_Clear"]
+                        </MudButton>
+                    </MudStack>
+                </MudForm>
+            </div>
         </MudPaper>
     </MudItem>
-
 </MudGrid>
 
 @code {
     // ---------- Estado ----------
     private bool _busyCount, _busyAdmin, _busyDelete;
-    private int _users;
+    private List<UserDTO> _users = null!;
     private string _lastRefreshLocal = "-";
 
     // ---------- Formularios / inputs ----------
@@ -150,7 +147,7 @@
         _busyCount = true;
         try
         {
-            _users = await Api.Users_CountAsync();
+            _users = (await Api.Users_GetAllUsersAsync()).ToList();
             _lastRefreshLocal = DateTime.Now.ToString("g");
         }
         catch (Exception ex)
@@ -252,12 +249,31 @@
     {
         var now = DateTime.Now;
         var csvHeader = L["Admin_CsvHeader"];
-        var csv = csvHeader + "\r\n" + $"{now:yyyy-MM-dd HH:mm:ss},{_users}\r\n";
-        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
 
+        // Asumimos que el header real es algo como "Id,Email,UserName,Telefono"
+        // si el header no es proporcionado en el archivo de recursos.
+        // Para simplificar, generamos el header directamente.
+        var header = "Id,Email,UserName,Telefono";
+
+        // Se inicializa un StringBuilder para construir la cadena CSV de manera eficiente.
+        var csvBuilder = new System.Text.StringBuilder();
+
+        // Añade el encabezado con los nombres de las propiedades.
+        csvBuilder.AppendLine(header);
+
+        // Itera sobre la lista de usuarios y añade cada usuario como una nueva fila.
+        foreach (var user in _users)
+        {
+            // Se formatea cada usuario como una fila CSV, separando los valores por comas.
+            // Se usan null-coalescing operators para evitar errores si las propiedades son null.
+            csvBuilder.AppendLine($"{user.Id ?? ""},{user.Email ?? ""},{user.UserName ?? ""},{user.Telefono ?? ""}");
+        }
+
+        var csv = csvBuilder.ToString();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
         var fileNamePrefix = L["Admin_CsvPrefix"];
         await JS.InvokeVoidAsync("downloadFile",
-            $"{fileNamePrefix}_{now:yyyyMMdd_HHmmss}.csv",
+            $"Reporte_Usuarios_{ now: yyyyMMdd_HHmmss}.csv",
             "text/csv;charset=utf-8",
             Convert.ToBase64String(bytes));
     }

@@ -201,7 +201,7 @@ namespace Infraestructura.Controllers
 
                 return Ok(new { Message = "Password changed successfully." });
             }
-            catch (ValidationException ex)  // si FluentValidation lanza ValidationException
+            catch (ValidationException ex)  
             {
                 _logger.Error(ex, $"[{traceId}] ChangePasswordAsync validation error");
                 foreach (var err in ex.Errors)

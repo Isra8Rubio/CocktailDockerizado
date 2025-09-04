@@ -9,7 +9,7 @@
       "configuration": null,
       "runtime": null,
       "targetFramework": null,
-      "noBuild": true,
+      "noBuild": false,
       "msBuildOutputPath": null,
       "verbose": true,
       "workingDirectory": null,

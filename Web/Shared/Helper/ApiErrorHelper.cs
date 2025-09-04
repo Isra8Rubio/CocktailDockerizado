@@ -10,7 +10,7 @@ namespace BlazorCocktails.Client.Shared.Helper;
 public static class ApiErrorHelper
 {
     /// <summary>
-    /// Devuelve un mensaje “bonito” y saca banderas útiles.
+    /// Devuelve un mensaje suave.
     /// </summary>
     public static string NiceError(
         Exception ex,
@@ -62,6 +62,7 @@ public static class ApiErrorHelper
                 403 => L["Err_Forbidden"],
                 404 => L["Err_NotFound"],
                 409 => L["Err_Conflict"],
+                500 => L["Err_ServerError"],
                 _ => L["Err_Generic"]
             };
         }

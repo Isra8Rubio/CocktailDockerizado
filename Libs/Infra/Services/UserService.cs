@@ -79,7 +79,7 @@ namespace Infraestructura.Services
             try
             {
                 return _repo.GetAllUsers()
-                    .Select(u => new UserDTO { Id = u.Id, Email = u.Email! })
+                    .Select(u => new UserDTO { Id = u.Id, Email = u.Email!, UserName = u.UserName!, Telefono = u.PhoneNumber! })
                     .ToList();
             }
             catch (Exception ex)

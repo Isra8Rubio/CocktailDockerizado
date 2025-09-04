@@ -30,13 +30,13 @@
 
                 <MudTextField T="string"
                               Variant="Variant.Filled"
-                              Placeholder="@L["Login_EmailPlaceholder"]"
+                              Label="@L["Login_EmailLabel"]"
                               @bind-Value="_model.Email"
                               For="@(() => _model.Email)"
                               InputType="InputType.Email"
                               Immediate="true"
                               Disabled="@_busy"
-                              Adornment="Adornment.Start"
+                              Adornment="Adornment.End"
                               AdornmentIcon="@Icons.Material.Filled.Email" />
 
                 <MudTextField class="mt-4"

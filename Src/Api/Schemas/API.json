@@ -1203,6 +1203,14 @@
           "email": {
             "type": "string",
             "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
